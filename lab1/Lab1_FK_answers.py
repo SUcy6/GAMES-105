@@ -1,4 +1,5 @@
 import numpy as np
+import scipy
 from scipy.spatial.transform import Rotation as R
 
 def load_motion_data(bvh_file_path):
@@ -30,6 +31,14 @@ def part1_calculate_T_pose(bvh_file_path):
     Tips:
         joint_name顺序应该和bvh一致
     """
+    file = open(bvh_file_path, 'r')
+    while True:
+        line = file.readline()        
+
+        if line == "MOTION":
+            break
+
+
     joint_name = None
     joint_parent = None
     joint_offset = None
