@@ -57,7 +57,7 @@ def part1_calculate_T_pose(bvh_file_path):
             id += 1
         elif line[0] == "OFFSET":
             rot = R.from_euler('XYZ',line[1:],degrees=True)
-            rot = rot.as_mrp()
+            rot = rot.as_euler('XYZ',degrees=True)
             rot = [np.float64(rot)]
             print(rot)
             joint_offset = np.append(joint_offset, rot, axis=0)
@@ -69,7 +69,7 @@ def part1_calculate_T_pose(bvh_file_path):
             joint_parent.append(id)
         elif line[0] == '}':
             stack.pop(-1)
-            id -= 1
+            # id -= 1
 
         if len(stack) == 0 and start:
             break
