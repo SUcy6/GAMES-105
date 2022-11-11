@@ -8,6 +8,7 @@ def part1(viewer, bvh_file_path):
     part1 读取T-pose， 完成part1_calculate_T_pose函数
     """
     joint_name, joint_parent, joint_offset = part1_calculate_T_pose(bvh_file_path)
+    print(joint_name, joint_parent, joint_offset)
     viewer.show_rest_pose(joint_name, joint_parent, joint_offset)
     viewer.run()
 
