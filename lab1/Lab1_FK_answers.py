@@ -91,8 +91,43 @@ def part2_forward_kinematics(joint_name, joint_parent, joint_offset, motion_data
     Tips:
         1. joint_orientations的四元数顺序为(x, y, z, w)
     """
-    joint_positions = None
-    joint_orientations = None
+    joint_positions = np.empty((0,3), dtype=np.float64)
+    joint_orientations = np.empty((0,4), dtype=np.float64)
+
+    motion = motion_data[frame_id]
+    for j in range(len(joint_name)):
+        parent = joint_parent[j]
+        offset = joint_offset[j]
+
+        if j==0: # root
+            pos = motion[:3]
+            pos = [np.float64(pos)]
+            rot = R.from_euler('XYZ', motion[3:6], degrees=True)
+            rot = rot.as_quat()
+            rot = [np.float64(rot)]
+            joint_positions = np.append(joint_positions, pos, axis=0)
+            joint_orientations = np.append(joint_orientations, rot, axis=0)
+           
+        else:
+            rot = R.from_euler('XYZ', motion[3+j:3+j+3], degrees=True)
+            rot = rot.as_matrix()
+            p_rot = R.from_quat(joint_orientations[parent])
+            p_rot = p_rot.as_matrix()
+            rot_mtx = np.dot(rot, p_rot)
+            rot = R.from_matrix(rot_mtx)
+            rot = rot.as_quat()
+            # for n in range(4):
+            #     rot[n] = rot[n] + joint_orientations[parent][n]
+            pos = []
+            for i in range(3):
+                pos.append(offset[i] + joint_positions[parent][i])
+            pos = [np.float64(pos)]
+            rot = [np.float64(rot)]
+            joint_positions = np.append(joint_positions, pos, axis=0)
+            joint_orientations = np.append(joint_orientations, rot, axis=0)
+
+        # print(joint_positions)
+        # print(joint_orientations)
     return joint_positions, joint_orientations
 
 
