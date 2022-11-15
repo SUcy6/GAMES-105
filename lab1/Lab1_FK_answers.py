@@ -93,42 +93,71 @@ def part2_forward_kinematics(joint_name, joint_parent, joint_offset, motion_data
     """
     joint_positions = np.empty((0,3), dtype=np.float64)
     joint_orientations = np.empty((0,4), dtype=np.float64)
+    temp_joint_orientations = np.empty((0,4), dtype=np.float64)
+    temp_joint_positions = np.empty((0,3), dtype=np.float64)
 
     motion = motion_data[frame_id]
+    mn = -1
     for j in range(len(joint_name)):
         parent = joint_parent[j]
         offset = joint_offset[j]
 
-        if j==0: # root
-            pos = motion[:3]
-            pos = [np.float64(pos)]
-            rot = R.from_euler('XYZ', motion[3:6], degrees=True)
-            rot = rot.as_quat()
-            rot = [np.float64(rot)]
-            joint_positions = np.append(joint_positions, pos, axis=0)
-            joint_orientations = np.append(joint_orientations, rot, axis=0)
-           
+        if not joint_name[j].endswith("end"):
+            if j==0: # root
+                pos = motion[:3]
+                pos = [np.float64(pos)]
+                rot = R.from_euler('XYZ', motion[3:6], degrees=True)
+                rot = rot.as_quat()
+                rot = [np.float64(rot)]
+                joint_positions = np.append(joint_positions, pos, axis=0)
+                joint_orientations = np.append(joint_orientations, rot, axis=0)
+                temp_joint_orientations = np.append(temp_joint_orientations, rot, axis=0)
+                temp_joint_positions = np.append(temp_joint_positions, pos, axis=0)
+                mn += 1
+            else:
+                rot = R.from_euler('XYZ', motion[3+mn:3+mn+3], degrees=True)
+                # rot = rot.as_matrix()
+                p_rot = R.from_quat(temp_joint_orientations[parent])
+                # p_rot = p_rot.as_matrix()
+                rot_mtx = p_rot * rot 
+                # rot_mtx = rot_mtx.as_matrix()
+                # rot = R.from_matrix(rot_mtx)
+                rot = rot_mtx.as_quat()
+                
+                pos = []
+                for i in range(3):
+                    pos.append(offset[i] + temp_joint_positions[parent][i])
+                pos = [np.float64(pos)]
+                rot = [np.float64(rot)]
+                joint_positions = np.append(joint_positions, pos, axis=0)
+                joint_orientations = np.append(joint_orientations, rot, axis=0)
+                temp_joint_orientations = np.append(temp_joint_orientations, rot, axis=0)
+                temp_joint_positions = np.append(temp_joint_positions, pos, axis=0)
+                mn += 1
         else:
-            rot = R.from_euler('XYZ', motion[3+j:3+j+3], degrees=True)
-            rot = rot.as_matrix()
-            p_rot = R.from_quat(joint_orientations[parent])
-            p_rot = p_rot.as_matrix()
-            rot_mtx = np.dot(rot, p_rot)
-            rot = R.from_matrix(rot_mtx)
-            rot = rot.as_quat()
-            # for n in range(4):
-            #     rot[n] = rot[n] + joint_orientations[parent][n]
+            # end node 
+            rot = [0,0,0]
+            rot = R.from_euler('XYZ', rot, degrees=True)
+            # rot = rot.as_matrix()
+            p_rot = R.from_quat(temp_joint_orientations[parent])
+            # p_rot = p_rot.as_matrix()
+            rot_mtx = p_rot * rot
+            
+            # rot = R.from_matrix(rot_mtx)
+            rot = rot_mtx.as_quat()
+            rot = [np.float64(rot)]
+            temp_joint_orientations = np.append(temp_joint_orientations, rot, axis=0)
+
             pos = []
             for i in range(3):
-                pos.append(offset[i] + joint_positions[parent][i])
+                pos.append(offset[i] + temp_joint_positions[parent][i])
             pos = [np.float64(pos)]
-            rot = [np.float64(rot)]
-            joint_positions = np.append(joint_positions, pos, axis=0)
-            joint_orientations = np.append(joint_orientations, rot, axis=0)
-
+            temp_joint_positions = np.append(temp_joint_positions, pos, axis=0)
+            
         # print(joint_positions)
         # print(joint_orientations)
-    return joint_positions, joint_orientations
+    # print(len(motion_data[frame_id]))
+    return temp_joint_positions, temp_joint_orientations
 
 
 def part3_retarget_func(T_pose_bvh_path, A_pose_bvh_path):
