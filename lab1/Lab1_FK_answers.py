@@ -142,5 +142,58 @@ def part3_retarget_func(T_pose_bvh_path, A_pose_bvh_path):
     Tips:
         两个bvh的joint name顺序可能不一致哦(
     """
-    motion_data = None
-    return motion_data
+    # find index for each joint in A
+    A_joint_name, A_joint_parent, A_joint_offset = part1_calculate_T_pose(A_pose_bvh_path)
+    A_motion_data = load_motion_data(A_pose_bvh_path)
+    mn = 0
+    ls = 0
+    rs = 0
+    index = {}
+    for i in range(len(A_joint_name)):
+        if A_joint_name[i] == "lShoulder":
+            ls = mn
+        if A_joint_name[i] == "rShoulder":
+            rs = mn
+        
+        if A_joint_name[i] == "RootJoint":
+            index["RootJoint"] = mn
+            mn += 6
+        else:
+            if not A_joint_name[i].endswith("end"):
+                index[A_joint_name[i]] = mn
+                mn += 3
+
+    # find index list refer to T
+    T_joint_name, T_joint_parent, T_joint_offset = part1_calculate_T_pose(T_pose_bvh_path)
+    idx = 0
+    idx_ls = []
+    for name in T_joint_name:
+        if name == "RootJoint":
+            for i in range(6):
+                idx_ls.append(i)
+            idx += 6
+        else:
+            if not name.endswith('end'):
+                old = index[name]
+                if old  != idx:
+                    idx_ls.append(old)
+                    idx_ls.append(old+1)
+                    idx_ls.append(old+2)
+                else:
+                    idx_ls.append(idx)
+                    idx_ls.append(idx+1)
+                    idx_ls.append(idx+2)
+                idx += 3
+
+    # change order
+    frame_id = 0
+    while frame_id < len(A_motion_data):
+        A_motion_data[frame_id][ls+2] -= 45
+        A_motion_data[frame_id][rs+2] += 45
+        A_motion_data[frame_id] = A_motion_data[frame_id][idx_ls]
+        # print(frame_id)
+        frame_id += 1
+    return A_motion_data
+
+
+
